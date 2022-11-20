@@ -5,7 +5,7 @@ PyTorch modules for cochleagram generation, allowing for gradient computations o
 ## Installation
 The easiest way to install chcochleagram is by pip installing directly from git: 
 
-`pip install git+ssh://git@github.mit.edu/jfeather/chcochleagram.git`
+`pip install git+git://github.com/jfeather/chcochleagram`
 
 Alternatively, you can clone the respository and run `pip install .` or other installation methods using the setup.py file. 
 
