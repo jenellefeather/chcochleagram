@@ -1,7 +1,10 @@
 import numpy as np
 import torch as ch
 import scipy.signal as signal
-
+try:
+    from scipy.signal import kaiser
+except ImportError:
+    from scipy.signal.windows import kaiser
 
 class DownsampleEnvelopes(ch.nn.Module):
     """
@@ -75,7 +78,7 @@ class SincWithKaiserWindow(DownsampleEnvelopes):
         downsample_filter_response_orig = (np.sinc(downsample_filter_times / 
                                                   self.downsample_factor) /
                                               self.downsample_factor)
-        downsample_filter_window = signal.kaiser(self.window_size, 5)
+        downsample_filter_window = kaiser(self.window_size, 5)
         downsample_filter_response = (downsample_filter_window * 
                                          downsample_filter_response_orig)
         downsample_filter_response = np.expand_dims(np.expand_dims(
