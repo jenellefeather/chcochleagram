@@ -16,6 +16,7 @@ class AudioToCochleagram(ch.nn.Module):
         self.sr = self.cgram_kwargs['sr']
         self.pad_factor = self.cgram_kwargs['pad_factor']
         self.use_rfft = self.cgram_kwargs['use_rfft']
+        self.persistent = self.cgram_kwargs.get('persistent', True)
 
         # Define cochlear filters
         self.coch_filter_kwargs = self.cgram_kwargs['coch_filter_kwargs']
@@ -39,6 +40,7 @@ class AudioToCochleagram(ch.nn.Module):
         self.env_sr = self.cgram_kwargs['env_sr']
         self.downsampling_kwargs = self.cgram_kwargs['downsampling_kwargs']
         self.downsampling_op = self.downsampling(self.sr, self.env_sr, 
+                                                 persistent=self.persistent,
                                                  **self.downsampling_kwargs)
 
         # Define a compression operation
@@ -51,7 +53,8 @@ class AudioToCochleagram(ch.nn.Module):
                                            self.filters, 
                                            self.envelope_extraction,
                                            self.downsampling_op,
-                                           compression=self.compression_op)
+                                           compression=self.compression_op,
+                                           persistent=self.persistent)
 
         self.Cochleagram = cochleagram
 
