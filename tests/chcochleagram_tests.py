@@ -87,6 +87,27 @@ class MatchSavedCochsTestCase(unittest.TestCase):
                         'Cochleagram saved in example_q63_cochleagram_1.pckl does not reproduce '
                         'with cochleagram parameters `cochleagram_1`')
 
+    def test_q63_coch_1_persistent_false(self):
+        from chcochleagram.default_cochleagrams import cochleagram_1
+        from chcochleagram.audio_transforms_cochleagram import AudioToCochleagram
+        import pickle
+        with open("../examples/example_q63_cochleagram_1.pckl", "rb") as f:
+            example_dict = pickle.load(f)
+        example_dict['persistent'] = False
+        full_cochleagram_pckl_params = AudioToCochleagram(example_dict['cgram_kwargs'])
+        c = full_cochleagram_pckl_params(ch.Tensor(example_dict['input_sound']))
+        self.assertTrue(np.allclose(example_dict['output_coch'], c.detach().numpy()),
+                        'Cochleagram saved in example_q63_cochleagram_1.pckl does not reproduce '
+                        'with paramaters saved in example_q63_cochleagram_1.pckl')
+
+        cochleagram_1['persistent'] = False
+        full_cochleagram_def_params = AudioToCochleagram(cochleagram_1)
+        c = full_cochleagram_def_params(ch.Tensor(example_dict['input_sound']))
+        self.assertTrue(np.allclose(example_dict['output_coch'], c.detach().numpy()),
+                        'Cochleagram saved in example_q63_cochleagram_1.pckl does not reproduce '
+                        'with cochleagram parameters `cochleagram_1`')
+
+
 
 class SubbandsTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):

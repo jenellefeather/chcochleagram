@@ -12,7 +12,7 @@ class Cochleagram(ch.nn.Module):
     and a compressive nonlinearity. 
     """
     def __init__(self, filter_object, envelope_extraction, downsampling, 
-                 compression=None, downsample_then_compress=True):
+                 compression=None, downsample_then_compress=True, persistent=True):
         """
         Makes the torch components used for the cochleagram generation. Construct 
         the filter_object, envelope_extraction, downsampling, and (optional) 
@@ -34,6 +34,8 @@ class Cochleagram(ch.nn.Module):
                 are downsampled before they are compressed. If False, reverses the 
                 order and applies the compression operation before the 
                 downsampling operation.          
+            persistent (bool) : If True, saves the cochleagram filters (subbands 
+                and downsampling) to the state dict.
         """
         super(Cochleagram, self).__init__()
 
@@ -44,6 +46,7 @@ class Cochleagram(ch.nn.Module):
         self.apply_in_fourier = filter_object.apply_in_fourier
         self.use_rfft = filter_object.use_rfft
         self.downsample_then_compress = downsample_then_compress
+        self.persistent = persistent
 
         if not self.use_rfft:
             raise NotImplementedError('not using rfft for speed is not tested')
@@ -58,7 +61,12 @@ class Cochleagram(ch.nn.Module):
                                                 self.apply_in_fourier,
                                                 self.use_rfft, 
                                                 self.pad_factor,
-                                                self.signal_size)
+                                                self.signal_size,
+                                                persistent=self.persistent)
+
+        persistent_error = 'Persistent flag is not consistent between subbands and downsampling. Please check'
+        if downsampling is not None:
+            assert (self.persistent == downsampling.persistent), persistent_error
 
         self.envelope_extraction = envelope_extraction
         self.downsampling = downsampling
@@ -97,14 +105,17 @@ class ComputeSubbands(ch.nn.Module):
     filtering. 
     """
     def __init__(self, coch_filters, apply_in_fourier, use_rfft, 
-                 pad_factor, signal_size):
+                 pad_factor, signal_size, persistent=True):
         super(ComputeSubbands, self).__init__()
         self.apply_in_fourier = apply_in_fourier
         self.use_rfft = use_rfft
         self.pad_factor = pad_factor
         self.signal_size = signal_size
+        self.persistent = persistent
     
-        self.register_buffer("coch_filters", ch.from_numpy(coch_filters).float())
+        self.register_buffer("coch_filters", 
+                             ch.from_numpy(coch_filters).float(),
+                             persistent=self.persistent)
 
     def forward(self, x): 
         if self.pad_factor is not None:

@@ -10,7 +10,7 @@ class DownsampleEnvelopes(ch.nn.Module):
     """
     Base class for downsampling operations for the cochlear envelopes.
     """
-    def __init__(self, sr, env_sr):
+    def __init__(self, sr, env_sr, persistent):
         """
         Base class for downsampling cochlear envelopes.
       
@@ -23,6 +23,7 @@ class DownsampleEnvelopes(ch.nn.Module):
         self.sr = sr
         self.env_sr = env_sr
         self.downsample_factor = self.sr/self.env_sr
+        self.persistent = persistent
 
     def forward(self, x):
         """
@@ -42,8 +43,8 @@ class SincWithKaiserWindow(DownsampleEnvelopes):
     """
     Makes a downsampling window that is a sinc function windowed with a kaiser window.
     """
-    def __init__(self, sr, env_sr, window_size=1001, padding=None):
-        super(SincWithKaiserWindow, self).__init__(sr, env_sr)
+    def __init__(self, sr, env_sr, persistent=True, window_size=1001, padding=None):
+        super(SincWithKaiserWindow, self).__init__(sr, env_sr, persistent)
         self.window_size = window_size
         self.padding = padding
         if self.sr % self.env_sr !=0:
@@ -51,7 +52,9 @@ class SincWithKaiserWindow(DownsampleEnvelopes):
                              'supported with integer downsampling factors')
         self.downsample_factor = int(self.downsample_factor)
         downsample_filter_np = self._make_downsample_filter_response()
-        self.register_buffer('downsample_filter', ch.from_numpy(downsample_filter_np).float())
+        self.register_buffer('downsample_filter', 
+                             ch.from_numpy(downsample_filter_np).float(),
+                             persistent=self.persistent)
         
     def forward(self, x): # TODO: implement different padding
         # TODO: is this the fastest way to apply the weighted average?
@@ -96,8 +99,8 @@ class HannPooling1d(DownsampleEnvelopes):
     normalize (bool): if true, divide the filter by the sum of its values, so that the
         smoothed signal is the same amplitude as the original.
     """
-    def __init__(self, sr, env_sr, window_size=9, padding=0, normalize=True):
-        super(HannPooling1d, self).__init__(sr, env_sr)
+    def __init__(self, sr, env_sr, persistent=True, window_size=9, padding=0, normalize=True):
+        super(HannPooling1d, self).__init__(sr, env_sr, persistent)
         self.padding = padding
         self.normalize = normalize
         self.window_size = window_size
@@ -107,7 +110,9 @@ class HannPooling1d(DownsampleEnvelopes):
         self.downsample_factor = int(self.downsample_factor)
 
         downsample_filter_np = self._make_hann_window()
-        self.register_buffer('downsample_filter', ch.from_numpy(downsample_filter_np).float())
+        self.register_buffer('downsample_filter', 
+                             ch.from_numpy(downsample_filter_np).float(),
+                             persistent=self.persistent)
 
     def forward(self, x): # TODO: implement different padding
         # TODO: is this the fastest way to apply the weighted average?
